@@ -1,0 +1,20 @@
+%p== Hi there, #{current_user.nickname} (<a href="/logout">log out</a>).
+%h2 Your Applications
+%ul
+  - @apps.each do |app|
+    %li
+      %a{:href => "/apps/#{app.key}"}= app.name
+      %a{:href => '#', :onclick => "var f=document.getElementById('delete_app_form');f.action='/apps/#{app.key}';f.parentNode.removeChild(f);this.parentNode.appendChild(f);f.style.display='block';return false;", :class => 'discreet'} delete
+%p
+  %a{:href => '#', :onclick => "document.getElementById('new_app_form').style.display='block';this.style.display='none';return false;"} New App
+%form{:action => '/apps', :method => 'POST', :style => 'display:none;', :id => 'new_app_form'}
+  %label{:for => 'name'} New App Name:
+  %input{:name => 'name', :id => 'name'}
+  %em a-z, 0-9, and underscore allowed
+  %input{:type => 'submit', :value => 'Create'}
+%form{:action => '', :method => 'POST', :style => 'display:none;', :id => 'delete_app_form'}
+  %input{:type => 'hidden', :name => '_method', :value => 'DELETE'}
+  %input{:type => 'checkbox', :id => 'sure', :name => 'sure', :value => 'yes'}
+  %label{:for => 'sure'} I am absolutely sure I want to delete this application and all its recorded exceptions and other data.
+  %input{:type => 'submit', :value => 'Delete'}
+%p== Your API Key is: #{@account.apikey}

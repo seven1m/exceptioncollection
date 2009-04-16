@@ -1,0 +1,14 @@
+!!! XML
+!!!
+%html
+  %head
+    %title Exception Collection
+    %style{:type => 'text/css'}
+      table.error th{text-align:right;vertical-align:top;padding-right:20px;}
+      table.error pre {margin:0;}
+  %body
+    %h1 Exception Collection
+    - if request.path_info != '/'
+      %p
+        %a{:href => '/'} Return to dashboard.
+    =yield

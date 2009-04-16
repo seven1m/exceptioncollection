@@ -1,0 +1,10 @@
+%h2= @app.name
+%ul
+  - @errors.each do |error|
+    %li
+      %a{:href => "/errors/#{error.key}"}=h error.message
+%p
+  - if params[:active] == 'no'
+    %a{:href => '?'} Show active.
+  - else
+    %a{:href => '?active=no'} Show inactive.
