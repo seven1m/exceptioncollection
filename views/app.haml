@@ -1,10 +1,20 @@
 %h2= @app.name
-%ul
+%table
   - @errors.each do |error|
-    %li
-      %a{:href => "/errors/#{error.key}"}=h error.message
+    %tr
+      %td
+        %a{:href => "/errors/#{error.key}"}=h error.message
+      %td=h error.created_at.strftime('%m/%d/%Y %I:%M %p')
+      %td=h error.host
 %p
   - if params[:active] == 'no'
     %a{:href => '?'} Show active.
   - else
     %a{:href => '?active=no'} Show inactive.
+%form{:method => 'POST'}
+  %input{:type => 'hidden', :name => '_method', :value => 'PUT'}
+  %label{:for => 'github_url'} GitHub URL:
+  %input{:name => 'github_url', :id => 'github_url', :value => @app.github_url}
+  %input{:type => 'submit', :value => 'Save'}
+%p
+  %a{:href => "https://#{request.host}/apps/#{@app.key}/setup"} Set up your app...

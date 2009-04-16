@@ -3,7 +3,7 @@ require 'rubygems'
 require 'haml'
 require 'sinatra'
 require 'xml-object'
-require File.dirname(__FILE__) + '/lib/bumble/bumble'
+require 'lib/bumble'
 require 'java'
 import com.google.appengine.api.users.UserServiceFactory;
 
@@ -74,6 +74,15 @@ get '/apps/:id' do
   end
 end
 
+get '/apps/:id/setup' do
+  ensure_logged_in
+  if @app = Application.find(params[:id]) and (@app.account_id == get_account.key or admin?)
+    haml :setup
+  else
+    status 404; "Not found."
+  end
+end
+
 post '/apps' do
   ensure_logged_in
   if params[:name] =~ /^[a-z0-9_]+$/i
@@ -84,6 +93,17 @@ post '/apps' do
     redirect "/apps/#{app.key}"
   else
     "App name can only contain characters a-z, 0-9, and underscore."
+  end
+end
+
+put '/apps/:id' do
+  ensure_logged_in
+  if @app = Application.find(params[:id]) and @app.account_id == get_account.key
+    @app.github_url = params[:github_url]
+    @app.save!
+    redirect "/apps/#{@app.key}"
+  else
+    status 404; "Not found."
   end
 end
 
@@ -111,7 +131,6 @@ end
 
 post '/errors' do
   data = XMLObject.new(request.body)
-  puts data.apikey, data.appid
   if data.apikey and account = Account.find(:apikey => data.apikey) and
   data.appid and application = Application.find(data.appid) and
   application.account_id == account.key
@@ -119,14 +138,14 @@ post '/errors' do
       Error.create(
         :application_id => application.key,
         :created_at     => Time.now,
-        :message        => data.message,
-        :backtrace      => data.backtrace,
-        :rails_root     => data.rails_root,
-        :url            => data.url,
-        :host           => data.host,
-        :ip             => data.ip,
-        :parameters     => data.parameters,
-        :process        => data.process,
+        :message        => unescape_html(data.message),
+        :backtrace      => unescape_html(data.backtrace),
+        :rails_root     => unescape_html(data.rails_root),
+        :url            => unescape_html(data.url),
+        :host           => unescape_html(data.host),
+        :ip             => unescape_html(data.ip),
+        :parameters     => unescape_html(data.parameters),
+        :process        => unescape_html(data.process),
         :active         => true
       )
     rescue => e
@@ -188,4 +207,20 @@ helpers do
   end
   include Rack::Utils
   alias_method :h, :escape_html
+  def unescape_html(html)
+    html.gsub(/&(quot|lt|gt);/) do |match|
+      {'quot' => '"', 'lt' => '<', 'gt' => '>'}[$1]
+    end
+  end
+  def linkify_backtrace(backtrace, github_url)
+    if github_url.to_s.any? and github_url =~ /^http:\/\/github.com/
+      github_url.sub!(/\/$/, '')
+      github_url.sub!(/\/tree\/master$/, '')
+      backtrace.gsub(/(app\/[^:]+):(\d+)/) do |match|
+        "<a href=\"#{github_url}/blob/master/#{$1}#L#{$2}\">#{match}</a>"
+      end
+    else
+      backtrace
+    end
+  end
 end

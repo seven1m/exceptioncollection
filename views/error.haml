@@ -5,15 +5,12 @@
     %td
       %a{:href => "/apps/#{@error.application_id}"}=h @error.application.name
   %tr
-    %th Active
-    %td=h @error.active ? 'yes' : 'no'
-  %tr
     %th When
     %td=h @error.created_at.strftime('%m/%d/%Y %I:%M %p')
   %tr
     %th Backtrace
     %td
-      %pre=h @error.backtrace
+      %pre= linkify_backtrace(h(@error.backtrace), @error.application.github_url)
   %tr
     %th Rails Root
     %td=h @error.rails_root
@@ -28,10 +25,14 @@
     %td=h @error.ip
   %tr
     %th Parameters
-    %td=h @error.parameters
+    %td
+      %code=h @error.parameters
   %tr
     %th Process
     %td=h @error.process
+  %tr
+    %th Active
+    %td=h @error.active ? 'yes' : 'no'
 %form{:method => 'POST'}
   %input{:type => 'hidden', :name => '_method', :value => 'PUT'}
   %input{:type => 'submit', :name => 'active', :value => @error.active ? 'Make Inactive' : 'Make Active'}

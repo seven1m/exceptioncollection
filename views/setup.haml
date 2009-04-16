@@ -1,0 +1,35 @@
+%h2 Application Setup
+%ol
+  %li
+    Create a file <code>config/initalizers/exception_collection.rb</code> and
+    put the following code in it:
+    %pre
+      :preserve
+        EXCEPTION_COLLECTION_APP_ID   = #{@app.key}
+        EXCEPTION_COLLECTION_API_KEY  = '#{get_account.apikey}'
+        EXCEPTION_COLLECTION_POST_URI = 'https://exceptioncollection.appspot.com'
+  %li
+    Add the following code to your <code>app/controllers/application_controller.rb</code>:
+    %pre
+      :preserve
+        def rescue_action_in_public_with_exception_collection(exception)
+          if defined?(EXCEPTION_COLLECTION_API_KEY)
+            builder = Builder::XmlMarkup.new(:target => (xml = ''), :indent => 2)
+            builder.error {
+              builder.apikey     EXCEPTION_COLLECTION_API_KEY
+              builder.appid      EXCEPTION_COLLECTION_APP_ID
+              builder.message    exception.message
+              builder.backtrace  exception.backtrace.join("\n")
+              builder.rails_root RAILS_ROOT
+              builder.url        "\#{request.protocol}\#{request.env["HTTP_X_FORWARDED_HOST"] || request.env["HTTP_HOST"]}\#{request.request_uri}"
+              builder.host       `hostname -s`.chomp
+              builder.ip         request.env["HTTP_X_FORWARDED_FOR"] || request.env["REMOTE_ADDR"]
+              builder.parameters request.parameters.inspect
+              builder.process    $$
+            }
+            ar = ActiveResource::Connection.new(EXCEPTION_COLLECTION_POST_URI)
+            ar.post('/errors', xml)
+          end
+          rescue_action_in_public_without_exception_collection(exception)
+        end
+        alias_method_chain :rescue_action_in_public, :exception_collection

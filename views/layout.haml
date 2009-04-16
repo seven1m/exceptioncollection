@@ -10,5 +10,5 @@
     %h1 Exception Collection
     - if request.path_info != '/'
       %p
-        %a{:href => '/'} Return to dashboard.
+        %a{:href => "http://#{request.host}/"} Return to dashboard.
     =yield
